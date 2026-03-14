@@ -1,109 +1,988 @@
-<!DOCTYPE html>
-<html lang="es">
+import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, 
+  FilePlus, 
+  FolderKanban, 
+  MessageSquare, 
+  Calendar, 
+  Users, 
+  TrendingUp, 
+  AlertCircle, 
+  CheckCircle2, 
+  Clock, 
+  Search,
+  ChevronRight,
+  LogOut,
+  Bell,
+  Plus,
+  BookOpen,
+  PieChart,
+  Sparkles,
+  Loader2,
+  FileText,
+  Upload,
+  User,
+  Video,
+  Filter,
+  ArrowUpRight,
+  ExternalLink,
+  Save,
+  Send,
+  Trash2,
+  Mail,
+  Briefcase,
+  X,
+  Download,
+  Eye,
+  Edit3,
+  MoreVertical,
+  ThumbsUp,
+  Star,
+  CheckSquare,
+  Square,
+  FileCheck,
+  AlertTriangle,
+  Paperclip,
+  Settings,
+  Share2,
+  BarChart3
+} from 'lucide-react';
 
-<head>
-<meta charset="UTF-8">
-<title>Registro de la persona Usuaria</title>
+// --- Constantes del Sistema ---
+const ROLES = {
+  ESTUDIANTE: 'student',
+  PROFESOR: 'professor',
+  ADMIN: 'admin'
+};
 
-<link rel="stylesheet" href="estilos.css">
+const SECCIONES = {
+  student: [
+    { id: 'dashboard', label: "Tablero", icon: LayoutDashboard },
+    { id: 'register', label: "Registrar Proyecto", icon: FilePlus },
+    { id: 'my-projects', label: "Mis Proyectos", icon: FolderKanban },
+    { id: 'progress', label: "Subir Avances", icon: TrendingUp },
+    { id: 'feedback', label: "Retroalimentación", icon: MessageSquare },
+    { id: 'calendar', label: "Calendario", icon: Calendar },
+  ],
+  professor: [
+    { id: 'dashboard', label: "Vista General", icon: LayoutDashboard },
+    { id: 'proposals', label: "Revisar Propuestas", icon: FilePlus },
+    { id: 'advised', label: "Proyectos Asesorados", icon: Users },
+    { id: 'project-bank', label: "Banco de Proyectos", icon: BookOpen },
+    { id: 'meetings', label: "Reuniones de Revisión", icon: Calendar },
+  ],
+  admin: [
+    { id: 'dashboard', label: "Indicadores", icon: PieChart },
+    { id: 'manage-users', label: "Gestión de Usuarios", icon: Users },
+    { id: 'global-reports', label: "Reportes Globales", icon: FileText },
+  ]
+};
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+// --- DATOS MOCK ---
+const PROYECTOS_ESTUDIANTE = [
+  { 
+    id: 1, 
+    titulo: 'Optimización de Redes Inteligentes', 
+    estado: 'En Desarrollo', 
+    progreso: 65, 
+    asesor: 'Dr. Ricardo Pérez', 
+    programa: 'Ing. Sistemas',
+    fechaRegistro: '2023-10-01',
+    descripcion: 'Sistema de optimización de recursos en redes inteligentes usando IA',
+    progresoPorcentaje: 65,
+    ultimaActualizacion: '2023-12-10'
+  },
+  { 
+    id: 2, 
+    titulo: 'App de Alfabetización Bilingüe', 
+    estado: 'En Revisión', 
+    progreso: 15, 
+    asesor: 'Dr. Ricardo Pérez', 
+    programa: 'Lic. Administración',
+    fechaRegistro: '2023-10-15',
+    descripcion: 'Aplicación móvil para alfabetización en contextos bilingües',
+    progresoPorcentaje: 15,
+    ultimaActualizacion: '2023-12-08'
+  },
+  { 
+    id: 3, 
+    titulo: 'IA para Reforestación Urbana', 
+    estado: 'Aprobado', 
+    progreso: 40, 
+    asesor: 'Dr. Ricardo Pérez', 
+    programa: 'Ing. Tecnologías de Manufactura',
+    fechaRegistro: '2023-09-20',
+    descripcion: 'Sistema de inteligencia artificial para optimizar proyectos de reforestación urbana',
+    progresoPorcentaje: 40,
+    ultimaActualizacion: '2023-12-12'
+  },
+];
 
-<script src="https://kit.fontawesome.com/4adad3e7d4.js" crossorigin="anonymous"></script>
+const PROPUESTAS_PENDIENTES = [
+  {
+    id: 1,
+    titulo: 'Sistema IoT para Monitoreo de Cultivos',
+    estudiante: 'Ana García',
+    matricula: '20210045',
+    programa: 'Ing. Sistemas',
+    email: 'a.garcia@upb.edu.mx',
+    descripcion: 'Plataforma integrada para el monitoreo de cultivos usando sensores IoT y análisis de datos en tiempo real.',
+    eje: 'Innovación Tecnológica',
+    linea: 'Aplicación',
+    estado: 'Pendiente',
+    fechaEnvio: '2023-12-13',
+    planteamiento: 'Los pequeños agricultores carecen de herramientas para monitorear el estado de sus cultivos en tiempo real, lo que afecta significativamente la productividad.'
+  },
+  {
+    id: 2,
+    titulo: 'Plataforma Educativa Accesible',
+    estudiante: 'Carlos López',
+    matricula: '20210089',
+    programa: 'Lic. Administración',
+    email: 'c.lopez@upb.edu.mx',
+    descripcion: 'Desarrollo de una plataforma educativa con características de accesibilidad para personas con discapacidad visual.',
+    eje: 'Educación Digital',
+    linea: 'Social',
+    estado: 'Pendiente',
+    fechaEnvio: '2023-12-12',
+    planteamiento: 'Existe una brecha digital en el acceso a educación para personas con discapacidad visual que utilizan lectores de pantalla.'
+  },
+  {
+    id: 3,
+    titulo: 'Sistema de Gestión de Residuos',
+    estudiante: 'María Santos',
+    matricula: '20210120',
+    programa: 'Ing. Ambiental',
+    email: 'm.santos@upb.edu.mx',
+    descripcion: 'Aplicación para la gestión eficiente de residuos industriales con clasificación automática.',
+    eje: 'Sustentabilidad',
+    linea: 'Investigación',
+    estado: 'Pendiente',
+    fechaEnvio: '2023-12-11',
+    planteamiento: 'La gestión inadecuada de residuos industriales genera impactos ambientales significativos.'
+  }
+];
 
-</head>
+const AVANCES_PROYECTO = [
+  {
+    id: 1,
+    fecha: '2023-12-10',
+    porcentaje: 65,
+    actividades: ['Análisis de requisitos completado', 'Diseño de arquitectura', 'Implementación 60%'],
+    problemas: 'Retraso en la integración de la API de terceros',
+    archivos: ['informe_tecnico.pdf', 'diagramas_arquitectura.png'],
+    notas: 'Se completó el análisis de requisitos. La arquitectura ha sido diseñada según patrones de microservicios.'
+  },
+  {
+    id: 2,
+    fecha: '2023-11-25',
+    porcentaje: 50,
+    actividades: ['Recopilación de datos completada', 'Diseño de prototipos iniciado', 'Pruebas preliminares'],
+    problemas: 'Ninguno reportado',
+    archivos: ['prototipo_inicial.fig'],
+    notas: 'Avance satisfactorio. El equipo está bien coordinado.'
+  }
+];
 
-<body>
+const App = () => {
+  const [role, setRole] = useState(ROLES.PROFESOR);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isGeneratingIA, setIsGeneratingIA] = useState(false);
+  const [notificaciones, setNotificaciones] = useState(3);
 
-<div class="form-container">
+  // --- MODALES Y ESTADOS UI ---
+  const [modalProyecto, setModalProyecto] = useState(null);
+  const [modalPropuesta, setModalPropuesta] = useState(null);
+  const [modalAvance, setModalAvance] = useState(false);
+  const [propuestasSeleccionadas, setPropuestasSeleccionadas] = useState({});
 
-<h2>Registro de la persona Usuaria</h2>
+  // --- ESTADO DE DATOS ---
+  const [proyectos, setProyectos] = useState([
+    { id: 1, title: 'Optimización de Redes Inteligentes', student: 'Ana García', matricula: '20210045', status: 'En Desarrollo', progress: 65, advisor: 'Dr. Ricardo Pérez', program: 'Ing. Sistemas', date: '2023-10-01', email: 'a.garcia@upb.edu.mx' },
+    { id: 2, title: 'App de Alfabetización Bilingüe', student: 'Marc Torres', matricula: '20210089', status: 'En Revisión', progress: 15, advisor: 'Dr. Ricardo Pérez', program: 'Lic. Administración', date: '2023-10-15', email: 'm.torres@upb.edu.mx' },
+    { id: 3, title: 'IA para Reforestación Urbana', student: 'Lucía Ríos', matricula: '20220120', status: 'Aprobado', progress: 40, advisor: 'Dr. Ricardo Pérez', program: 'Ing. Tecnologías de Manufactura', date: '2023-09-20', email: 'l.rios@upb.edu.mx' },
+    { id: 4, title: 'Sistemas de Riego IOT', student: 'Kevin Luna', matricula: '20200540', status: 'En Desarrollo', progress: 85, advisor: 'Dra. María Elena', program: 'Ing. Mecatrónica', date: '2023-08-15', email: 'k.luna@upb.edu.mx' },
+    { id: 5, title: 'Análisis de Datos Médicos', student: 'Sofía Paz', matricula: '20210332', status: 'En Riesgo', progress: 5, advisor: 'Dr. Ricardo Pérez', program: 'Ing. Biomédica', date: '2023-11-01', email: 's.paz@upb.edu.mx' },
+  ]);
 
-<form>
+  const [propuestas, setPropuestas] = useState(PROPUESTAS_PENDIENTES);
+  const [avancesProyecto, setAvancesProyecto] = useState(AVANCES_PROYECTO);
 
-<div class="input-group">
+  // --- MANEJADORES DE FORMULARIOS ---
+  const [formData, setFormData] = useState({
+    titulo: '',
+    estudiante: 'Ricardo Estudiante',
+    matricula: '20230001',
+    carrera: 'Ing. Sistemas Automotrices',
+    email: 'r.estudiante@upb.edu.mx',
+    eje: 'Innovación Tecnológica',
+    lineaAplicacion: '',
+    descripcion: '',
+    planteamiento: ''
+  });
 
-<label>Nombre</label>
+  // --- ESTADO PARA AVANCES ---
+  const [formAvance, setFormAvance] = useState({
+    porcentaje: 65,
+    actividades: [],
+    nuevaActividad: '',
+    problemas: '',
+    archivos: [],
+    notas: ''
+  });
 
-<div class="input-box">
-<i class="fa-solid fa-user"></i>
-<input type="text" placeholder="Tu nombre">
-</div>
+  // --- ESTADO PARA EVALUACIÓN DE PROPUESTAS ---
+  const [evaluacionPropuesta, setEvaluacionPropuesta] = useState({
+    aprobada: null,
+    comentarios: '',
+    calificacion: 5
+  });
 
-</div>
+  const handleOptimizeIA = () => {
+    if (!formData.planteamiento) return;
+    setIsGeneratingIA(true);
+    setTimeout(() => {
+      setFormData(prev => ({
+        ...prev, 
+        planteamiento: prev.planteamiento + "\n\n[Revisión IA]: Se recomienda fortalecer el marco teórico citando fuentes de 2023 y clarificar la variable dependiente del modelo de optimización."
+      }));
+      setIsGeneratingIA(false);
+    }, 1500);
+  };
 
+  const getStatusColor = (status) => {
+    const s = status.toLowerCase();
+    if (s.includes('aprobado')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (s.includes('desarrollo')) return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (s.includes('revisión')) return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (s.includes('riesgo')) return 'bg-rose-100 text-rose-700 border-rose-200';
+    return 'bg-slate-100 text-slate-700 border-slate-200';
+  };
 
-<div class="input-group">
+  const handleAgregarActividad = () => {
+    if (formAvance.nuevaActividad.trim()) {
+      setFormAvance(prev => ({
+        ...prev,
+        actividades: [...prev.actividades, formAvance.nuevaActividad],
+        nuevaActividad: ''
+      }));
+    }
+  };
 
-<label>Apellido</label>
+  const handleEliminarActividad = (index) => {
+    setFormAvance(prev => ({
+      ...prev,
+      actividades: prev.actividades.filter((_, i) => i !== index)
+    }));
+  };
 
-<div class="input-box">
-<i class="fa-solid fa-id-card"></i>
-<input type="text" placeholder="Tu apellido">
-</div>
+  const handleAprobarPropuesta = (id) => {
+    setPropuestas(prev => prev.filter(p => p.id !== id));
+    setModalPropuesta(null);
+  };
 
-</div>
+  const handleRechazarPropuesta = (id) => {
+    setPropuestas(prev => prev.filter(p => p.id !== id));
+    setModalPropuesta(null);
+  };
 
+  const toggleSeleccionarPropuesta = (id) => {
+    setPropuestasSeleccionadas(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
-<div class="input-group">
+  const currentSections = SECCIONES[role] || [];
 
-<label>Correo Electrónico</label>
+  return (
+    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+      
+      {/* Sidebar - Identidad UPB */}
+      <aside className="w-64 bg-[#002B49] text-white flex flex-col shadow-xl z-20">
+        <div className="p-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-[#002B49] font-black text-xl">U</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tight leading-none uppercase">SISPE</h1>
+              <p className="text-[9px] text-white/50 font-bold uppercase tracking-[0.1em] mt-1">U. Politécnica del Bicentenario</p>
+            </div>
+          </div>
+        </div>
+        
+        <nav className="flex-1 overflow-y-auto py-4">
+          <p className="px-6 text-[10px] font-black text-white/30 uppercase tracking-widest mb-2">Menú Principal</p>
+          {currentSections.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center px-6 py-3 space-x-3 transition-all duration-200 ${
+                activeTab === item.id 
+                ? 'bg-white/10 border-r-4 border-[#00B4CC] text-[#00B4CC]' 
+                : 'text-white/60 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <item.icon size={18} />
+              <span className="font-semibold text-sm">{item.label}</span>
+            </button>
+          ))}
+        </nav>
 
-<div class="input-box">
-<i class="fa-solid fa-envelope"></i>
-<input type="email" placeholder="correo@email.com">
-</div>
+        <div className="p-4 border-t border-white/10 bg-[#001D33]">
+          <div className="flex items-center space-x-3 mb-4 px-2">
+            <div className="w-9 h-9 rounded-full bg-[#00B4CC] flex items-center justify-center font-bold text-white shadow-lg">
+              {role.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-xs font-bold truncate">Usuario Activo</p>
+              <select 
+                value={role} 
+                onChange={(e) => {setRole(e.target.value); setActiveTab('dashboard')}}
+                className="bg-transparent text-[10px] text-white/50 outline-none cursor-pointer w-full border-none p-0 appearance-none"
+              >
+                <option value={ROLES.ESTUDIANTE} className="text-slate-900">Portal Estudiante</option>
+                <option value={ROLES.PROFESOR} className="text-slate-900">Portal Profesor</option>
+                <option value={ROLES.ADMIN} className="text-slate-900">Administrador</option>
+              </select>
+            </div>
+          </div>
+          <button className="w-full flex items-center space-x-2 text-white/40 hover:text-rose-400 transition-colors px-2 py-2 rounded-lg">
+            <LogOut size={16} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Cerrar Sesión</span>
+          </button>
+        </div>
+      </aside>
 
-</div>
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0">
+        
+        {/* Superior Header */}
+        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10 shrink-0">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-bold text-slate-800">
+              {currentSections.find(n => n.id === activeTab)?.label || "Inicio"}
+            </h2>
+            <div className="hidden md:flex bg-slate-100 rounded-full px-3 py-1 gap-2 items-center">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Servidor UPB Activo</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-6">
+            <div className="relative group cursor-pointer">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-[#002B49]" size={16} />
+              <input 
+                type="text" 
+                placeholder="Buscar proyecto..." 
+                className="pl-10 pr-4 py-2 bg-slate-100 border-transparent border focus:border-indigo-300 focus:bg-white rounded-xl text-xs w-64 transition-all outline-none"
+              />
+            </div>
+            <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl relative transition-colors">
+              <Bell size={20} />
+              {notificaciones > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 rounded-full border-2 border-white text-[8px] text-white flex items-center justify-center font-black">
+                  {notificaciones}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
 
+        {/* Dynamic Section Rendering */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-8">
 
-<div class="input-group">
+          {/* DASHBOARD: VISTA GENERAL (COMÚN) */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
+              <div className="flex justify-between items-end">
+                <div>
+                  <h3 className="text-2xl font-black text-[#002B49]">¡Bienvenido de nuevo!</h3>
+                  <p className="text-slate-500 font-medium">Resumen institucional de tu actividad académica hoy.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none">Fecha de Hoy</p>
+                  <p className="text-lg font-black text-slate-800 leading-tight">14 de Marzo, 2026</p>
+                </div>
+              </div>
 
-<label>Contraseña</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Total Proyectos" value={proyectos.length} icon={FolderKanban} color="indigo" />
+                <StatCard title="Activos" value={3} icon={CheckCircle2} color="emerald" />
+                <StatCard title="En Revisión" value={1} icon={Clock} color="amber" />
+                <StatCard title="En Riesgo" value={1} icon={AlertCircle} color="rose" />
+              </div>
 
-<div class="input-box">
-<i class="fa-solid fa-lock"></i>
-<input type="password">
-</div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 className="font-black text-slate-800 mb-6 flex items-center gap-2">
+                      <TrendingUp className="text-[#00B4CC]" /> Proyectos con mayor actividad
+                    </h4>
+                    <div className="space-y-4">
+                      {proyectos.slice(0, 3).map(p => (
+                        <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-[#00B4CC] transition-all group">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-[#002B49] group-hover:bg-[#002B49] group-hover:text-white transition-all">
+                              <FileText size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-slate-800 leading-none">{p.title}</p>
+                              <p className="text-xs text-slate-500 mt-1">{p.student} • {p.program}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs font-black text-indigo-600">{p.progress}%</p>
+                            <div className="w-24 h-1.5 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                              <div className="h-full bg-indigo-600" style={{width: `${p.progress}%`}}></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-</div>
+                <div className="space-y-6">
+                   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 className="font-black text-slate-800 mb-4">Acciones Críticas</h4>
+                    <div className="space-y-3">
+                      <QuickAction label="Reporte de Indicadores" icon={PieChart} color="bg-indigo-50 text-indigo-600" />
+                      <QuickAction label="Validar Citas Académicas" icon={Sparkles} color="bg-emerald-50 text-emerald-600" />
+                      <QuickAction label="Calendario de Defensas" icon={Calendar} color="bg-rose-50 text-rose-600" />
+                    </div>
+                   </div>
+                   
+                   <div className="bg-[#002B49] p-6 rounded-2xl text-white relative overflow-hidden group shadow-xl">
+                      <Sparkles className="absolute -top-4 -right-4 text-[#00B4CC]/20 w-32 h-32 rotate-12 group-hover:rotate-45 transition-transform duration-700" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[#00B4CC] mb-1">UPB Virtual</p>
+                      <h5 className="text-xl font-bold leading-tight relative z-10">Optimiza tu Tesis con Inteligencia Artificial</h5>
+                      <button className="mt-4 px-4 py-2 bg-[#00B4CC] text-white rounded-xl text-xs font-bold hover:scale-105 transition-transform relative z-10">
+                        Probar Asistente
+                      </button>
+                   </div>
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* ESTUDIANTE: REGISTRAR PROYECTO */}
+          {activeTab === 'register' && (
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-400">
+               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-[#002B49] p-8 text-white relative overflow-hidden">
+                    <div className="relative z-10">
+                      <h3 className="text-2xl font-black tracking-tight">Registro de Nueva Propuesta</h3>
+                      <p className="text-white/60 text-sm mt-1">Completa los campos obligatorios para iniciar el proceso de revisión institucional.</p>
+                    </div>
+                    <FilePlus className="absolute -right-4 -bottom-4 w-48 h-48 text-white/5 rotate-12" />
+                  </div>
+                  
+                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Columna Izquierda: Info Personal */}
+                    <div className="space-y-5">
+                      <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b pb-2">Datos del Alumno</h5>
+                      <div className="space-y-4">
+                        <InputGroup label="Nombre del Estudiante" value={formData.estudiante} readOnly icon={User} />
+                        <InputGroup label="Matrícula" value={formData.matricula} readOnly icon={Clock} />
+                        <InputGroup label="Programa Académico" value={formData.carrera} readOnly icon={Briefcase} />
+                        <InputGroup label="Correo Institucional" value={formData.email} readOnly icon={Mail} />
+                      </div>
+                    </div>
 
-<div class="input-group">
+                    {/* Columna Derecha: Info Proyecto */}
+                    <div className="space-y-5">
+                      <h5 className="text-xs font-black text-slate-400 uppercase tracking-widest border-b pb-2">Información del Proyecto</h5>
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase">Título del Proyecto</label>
+                          <input 
+                            type="text" 
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400 transition-all"
+                            placeholder="Ej. Sistema de Monitoreo de Emisiones..."
+                            value={formData.titulo}
+                            onChange={(e) => setFormData({...formData, titulo: e.target.value})}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <SelectGroup label="Eje Temático" options={["Innovación", "Sustentabilidad", "Educación", "Manufactura"]} />
+                          <SelectGroup label="Línea de Trabajo" options={["Investigación", "Aplicación", "Desarrollo", "Social"]} />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase flex justify-between items-center">
+                            Planteamiento del Problema
+                            <button 
+                              onClick={handleOptimizeIA}
+                              disabled={isGeneratingIA}
+                              className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors disabled:opacity-50"
+                            >
+                              {isGeneratingIA ? <Loader2 className="animate-spin" size={12} /> : <Sparkles size={12} />}
+                              <span>{isGeneratingIA ? 'Optimizando...' : 'Mejorar con IA'}</span>
+                            </button>
+                          </label>
+                          <textarea 
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400 h-32 resize-none transition-all"
+                            placeholder="Describe la problemática que resuelve tu proyecto..."
+                            value={formData.planteamiento}
+                            onChange={(e) => setFormData({...formData, planteamiento: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-<label>Sobre ti</label>
+                  <div className="p-8 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                    <p className="text-xs text-slate-400 max-w-xs">Al enviar, tu propuesta será enviada al comité académico de la UPB para su asignación.</p>
+                    <div className="flex gap-4">
+                       <button className="px-6 py-3 border border-slate-200 bg-white text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2">
+                         <Save size={16} /> Guardar Borrador
+                       </button>
+                       <button className="px-8 py-3 bg-[#002B49] text-white rounded-2xl text-xs font-bold hover:bg-[#001D33] shadow-lg shadow-indigo-100 transition-all flex items-center gap-2">
+                         <Send size={16} /> Enviar Propuesta
+                       </button>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          )}
 
-<textarea rows="3" placeholder="Cuéntanos un poco sobre ti"></textarea>
+          {/* ===== ESTUDIANTE: MIS PROYECTOS ===== */}
+          {activeTab === 'my-projects' && (
+            <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black text-[#002B49]">Mis Proyectos</h3>
+                  <p className="text-sm text-slate-500 mt-1">Seguimiento y gestión de tus proyectos académicos registrados.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all">
+                    <Filter size={14} /> Filtrar
+                  </button>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-[#002B49] text-white rounded-xl text-xs font-bold hover:bg-[#001D33] transition-all">
+                    <Plus size={14} /> Nuevo Proyecto
+                  </button>
+                </div>
+              </div>
 
-</div>
+              {/* Grid de Proyectos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {PROYECTOS_ESTUDIANTE.map((proyecto) => (
+                  <div 
+                    key={proyecto.id}
+                    className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-xl hover:border-[#00B4CC] transition-all group"
+                  >
+                    {/* Header del Card */}
+                    <div className={`p-6 ${proyecto.estado === 'Aprobado' ? 'bg-emerald-50 border-b border-emerald-100' : 
+                                                proyecto.estado === 'En Desarrollo' ? 'bg-blue-50 border-b border-blue-100' : 
+                                                proyecto.estado === 'En Revisión' ? 'bg-amber-50 border-b border-amber-100' : 'bg-slate-50 border-b border-slate-100'}`}>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <span className={`inline-block px-3 py-1 rounded-lg text-[9px] font-black uppercase border-2 mb-2 ${getStatusColor(proyecto.estado)}`}>
+                            {proyecto.estado}
+                          </span>
+                          <h4 className="text-lg font-black text-slate-800 group-hover:text-[#002B49] transition-colors leading-snug">{proyecto.titulo}</h4>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-2">{proyecto.descripcion}</p>
+                    </div>
 
+                    {/* Contenido */}
+                    <div className="p-6 space-y-4">
+                      {/* Info de Asesor */}
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                        <div className="w-8 h-8 rounded-full bg-[#002B49] flex items-center justify-center text-white text-xs font-bold">
+                          {proyecto.asesor.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Asesor</p>
+                          <p className="text-xs font-bold text-slate-700 truncate">{proyecto.asesor}</p>
+                        </div>
+                      </div>
 
-<p class="intereses">Intereses</p>
+                      {/* Progreso */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avance</span>
+                          <span className="text-sm font-black text-[#002B49]">{proyecto.progresoPorcentaje}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-500"
+                            style={{width: `${proyecto.progresoPorcentaje}%`}}
+                          />
+                        </div>
+                      </div>
 
-<div class="checkbox-group">
+                      {/* Metadata */}
+                      <div className="text-[10px] text-slate-500 space-y-1 pt-2 border-t border-slate-100">
+                        <p><span className="font-bold">Registrado:</span> {proyecto.fechaRegistro}</p>
+                        <p><span className="font-bold">Última actualización:</span> {proyecto.ultimaActualizacion}</p>
+                      </div>
+                    </div>
 
-<label class="checkbox">
-<input type="checkbox">
-<span>Tecnología</span>
-</label>
+                    {/* Acciones */}
+                    <div className="p-6 bg-slate-50 border-t border-slate-200 flex gap-2">
+                      <button 
+                        onClick={() => setModalProyecto(proyecto)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all"
+                      >
+                        <Eye size={14} /> Ver
+                      </button>
+                      <button className="flex-1 flex items-center justify-center gap-2 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all">
+                        <Download size={14} /> Reportes
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-<label class="checkbox">
-<input type="checkbox">
-<span>Arte</span>
-</label>
+              {/* MODAL: VER DETALLES DE PROYECTO */}
+              {modalProyecto && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                  <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300">
+                    
+                    {/* Header del Modal */}
+                    <div className="sticky top-0 bg-[#002B49] text-white p-6 flex items-center justify-between z-10">
+                      <div>
+                        <h2 className="text-xl font-black">{modalProyecto.titulo}</h2>
+                        <p className="text-white/60 text-sm">Proyecto Académico</p>
+                      </div>
+                      <button 
+                        onClick={() => setModalProyecto(null)}
+                        className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                      >
+                        <X size={24} />
+                      </button>
+                    </div>
 
-<label class="checkbox">
-<input type="checkbox">
-<span>Deporte</span>
-</label>
+                    <div className="p-8 space-y-6">
+                      {/* Status y Progreso */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                          <p className="text-xs font-bold text-slate-600 uppercase mb-1">Estado</p>
+                          <span className={`inline-block px-3 py-1 rounded-lg text-[9px] font-black uppercase border-2 ${getStatusColor(modalProyecto.estado)}`}>
+                            {modalProyecto.estado}
+                          </span>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                          <p className="text-xs font-bold text-slate-600 uppercase mb-1">Avance General</p>
+                          <p className="text-2xl font-black text-indigo-600">{modalProyecto.progresoPorcentaje}%</p>
+                        </div>
+                      </div>
 
-</div>
+                      {/* Descripción */}
+                      <div>
+                        <h3 className="font-black text-slate-800 mb-2">Descripción del Proyecto</h3>
+                        <p className="text-sm text-slate-700 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                          {modalProyecto.descripcion}
+                        </p>
+                      </div>
 
-<button class="btn">Registrarse</button>
+                      {/* Info del Asesor */}
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+                        <p className="text-xs font-black text-slate-600 uppercase mb-2">Asesor Asignado</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-[#002B49] flex items-center justify-center text-white font-black text-lg">
+                            {modalProyecto.asesor.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{modalProyecto.asesor}</p>
+                            <p className="text-xs text-slate-600">Asesor de Proyecto</p>
+                          </div>
+                        </div>
+                      </div>
 
-</form>
+                      {/* Acciones */}
+                      <div className="flex gap-3 pt-4 border-t border-slate-200">
+                        <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all">
+                          <Edit3 size={14} /> Editar Proyecto
+                        </button>
+                        <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#002B49] text-white rounded-xl text-xs font-bold hover:bg-[#001D33] transition-all">
+                          <Download size={14} /> Descargar Reporte
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-</div>
+          {/* ===== ESTUDIANTE: SUBIR AVANCES ===== */}
+          {activeTab === 'progress' && (
+            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-400">
+              {/* Selector de Proyecto */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-black text-slate-800 mb-4">Seleccionar Proyecto</h3>
+                <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-400 transition-all">
+                  <option>Optimización de Redes Inteligentes (65% completado)</option>
+                  <option>App de Alfabetización Bilingüe (15% completado)</option>
+                  <option>IA para Reforestación Urbana (40% completado)</option>
+                </select>
+              </div>
 
-</body>
-</html>
+              {/* Formulario de Avances */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-[#002B49] p-8 text-white relative overflow-hidden">
+                  <div className="relative z-10">
+                    <h3 className="text-2xl font-black tracking-tight">Reporte de Avances</h3>
+                    <p className="text-white/60 text-sm mt-1">Documenta el progreso de tu proyecto con detalles técnicos y archivos.</p>
+                  </div>
+                  <TrendingUp className="absolute -right-4 -bottom-4 w-48 h-48 text-white/5 rotate-12" />
+                </div>
+
+                <div className="p-8 space-y-8">
+                  {/* Porcentaje de Progreso */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex justify-between items-center mb-2">
+                        <span>Porcentaje de Avance</span>
+                        <span className="text-lg font-black text-[#002B49]">{formAvance.porcentaje}%</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={formAvance.porcentaje}
+                        onChange={(e) => setFormAvance({...formAvance, porcentaje: parseInt(e.target.value)})}
+                        className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600"
+                      />
+                      <div className="flex justify-between text-xs text-slate-400 mt-2">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                      <p className="text-sm font-bold text-indigo-900">
+                        {formAvance.porcentaje <= 25 ? '🔴 Necesita atención' : 
+                         formAvance.porcentaje <= 50 ? '🟡 En proceso' :
+                         formAvance.porcentaje <= 75 ? '🟢 Buen avance' : '✅ Prácticamente finalizado'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actividades Completadas */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Actividades Completadas</h4>
+                      <div className="flex gap-2 mb-4">
+                        <input 
+                          type="text" 
+                          placeholder="Ej: Implementación de módulo de autenticación..."
+                          value={formAvance.nuevaActividad}
+                          onChange={(e) => setFormAvance({...formAvance, nuevaActividad: e.target.value})}
+                          className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400 transition-all"
+                        />
+                        <button 
+                          onClick={handleAgregarActividad}
+                          className="px-4 py-3 bg-[#002B49] text-white rounded-xl text-xs font-bold hover:bg-[#001D33] transition-all flex items-center gap-2"
+                        >
+                          <Plus size={14} /> Agregar
+                        </button>
+                      </div>
+
+                      {/* Lista de Actividades */}
+                      <div className="space-y-2">
+                        {formAvance.actividades.length > 0 ? (
+                          formAvance.actividades.map((actividad, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl group">
+                              <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
+                              <span className="text-sm font-medium text-slate-700 flex-1">{actividad}</span>
+                              <button 
+                                onClick={() => handleEliminarActividad(index)}
+                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                            <p className="text-xs text-slate-500">No hay actividades registradas. Agrega la primera.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Problemas Encontrados */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Problemas o Impedimentos</label>
+                    <textarea 
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400 h-24 resize-none transition-all"
+                      placeholder="Describe cualquier obstáculo encontrado durante el desarrollo..."
+                      value={formAvance.problemas}
+                      onChange={(e) => setFormAvance({...formAvance, problemas: e.target.value})}
+                    />
+                  </div>
+
+                  {/* Notas Adicionales */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Notas y Observaciones</label>
+                    <textarea 
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-indigo-400 h-24 resize-none transition-all"
+                      placeholder="Información adicional relevante para tu asesor..."
+                      value={formAvance.notas}
+                      onChange={(e) => setFormAvance({...formAvance, notas: e.target.value})}
+                    />
+                  </div>
+
+                  {/* Carga de Archivos */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Archivos Adjuntos</label>
+                    <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-indigo-400 hover:bg-indigo-50 transition-all cursor-pointer group">
+                      <Upload className="mx-auto mb-3 text-slate-400 group-hover:text-indigo-600 transition-colors" size={32} />
+                      <p className="font-bold text-slate-700 mb-1">Arrastra archivos aquí o haz clic</p>
+                      <p className="text-xs text-slate-500">PDF, PNG, JPG (máx. 20MB)</p>
+                    </div>
+                  </div>
+
+                  {/* Historial de Avances */}
+                  <div className="space-y-3 pt-6 border-t border-slate-200">
+                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Historial de Avances</h4>
+                    <div className="space-y-3">
+                      {avancesProyecto.map((avance) => (
+                        <div key={avance.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-[#00B4CC] transition-all cursor-pointer">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="font-bold text-slate-800">{avance.fecha}</p>
+                              <p className="text-xs text-slate-500">Avance: {avance.porcentaje}%</p>
+                            </div>
+                            <span className="text-xs font-black px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full">{avance.porcentaje}%</span>
+                          </div>
+                          <div className="space-y-2 text-xs">
+                            <p><span className="font-bold">Actividades:</span> {avance.actividades.join(', ')}</p>
+                            {avance.problemas && <p><span className="font-bold">Problemas:</span> {avance.problemas}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                  <p className="text-xs text-slate-400 max-w-xs">Tu asesor recibirá una notificación al registrar este avance.</p>
+                  <div className="flex gap-4">
+                     <button className="px-6 py-3 border border-slate-200 bg-white text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-100 transition-all flex items-center gap-2">
+                       <Save size={16} /> Guardar Borrador
+                     </button>
+                     <button className="px-8 py-3 bg-[#002B49] text-white rounded-2xl text-xs font-bold hover:bg-[#001D33] shadow-lg transition-all flex items-center gap-2">
+                       <Send size={16} /> Enviar Avance
+                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ===== PROFESOR: REVISAR PROPUESTAS ===== */}
+          {activeTab === 'proposals' && (
+            <div className="space-y-6 animate-in fade-in duration-500">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black text-[#002B49]">Revisar Propuestas de Estudiantes</h3>
+                  <p className="text-sm text-slate-500 mt-1">Evaluación y asignación de proyectos académicos pendientes.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all">
+                    <Filter size={14} /> Filtros
+                  </button>
+                  <div className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold">
+                    {propuestas.length} Propuestas Pendientes
+                  </div>
+                </div>
+              </div>
+
+              {propuestas.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {propuestas.map((propuesta) => (
+                    <div 
+                      key={propuesta.id} 
+                      className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-xl hover:border-[#00B4CC] transition-all group"
+                    >
+                      {/* Header */}
+                      <div className="p-6 bg-gradient-to-r from-slate-50 to-indigo-50 border-b border-slate-200">
+                        <div className="flex items-start justify-between mb-3">
+                          <input 
+                            type="checkbox"
+                            checked={propuestasSeleccionadas[propuesta.id] || false}
+                            onChange={() => toggleSeleccionarPropuesta(propuesta.id)}
+                            className="w-5 h-5 rounded border-2 border-slate-300 accent-indigo-600 cursor-pointer"
+                          />
+                          <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-[9px] font-black uppercase border border-amber-200">
+                            Pendiente
+                          </span>
+                        </div>
+                        <h4 className="text-lg font-black text-slate-800 group-hover:text-[#002B49] transition-colors leading-snug mb-2">
+                          {propuesta.titulo}
+                        </h4>
+                        <p className="text-xs text-slate-600 line-clamp-2">{propuesta.descripcion}</p>
+                      </div>
+
+                      {/* Info del Estudiante */}
+                      <div className="p-6 space-y-4 border-b border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#002B49] flex items-center justify-center text-white font-black text-sm">
+                            {propuesta.estudiante.split(' ')[0].charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800">{propuesta.estudiante}</p>
+                            <p className="text-xs text-slate-500">{propuesta.matricula} • {propuesta.programa}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <Mail size={14} className="text-slate-400" />
+                          {propuesta.email}
+                        </div>
+                      </div>
+
+                      {/* Detalles */}
+                      <div className="p-6 space-y-3 bg-slate-50 border-b border-slate-200">
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <p className="font-bold text-slate-700">Eje Temático</p>
+                            <p className="text-slate-600">{propuesta.eje}</p>
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-700">Línea de Trabajo</p>
+                            <p className="text-slate-600">{propuesta.linea}</p>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          <span className="font-bold">Enviado:</span> {propuesta.fechaEnvio}
+                        </div>
+                      </div>
+
+                      {/* Acciones */}
+                      <div className="p-6 flex gap-3">
+                        <button 
+                          onClick={() => setModalPropuesta(propuesta)}
+                          className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Eye size={14} /> Ver Detalles
+                        </button>
+                        <button className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                          <MessageSquare size={14} /> Comentar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-200 border-dashed">
+                  <CheckCircle2 size={40} className="text-emerald-500 mb-4" />
+                  <h3 className="text-xl font-black text-slate-700">¡Sin propuestas pendientes!</h3>
+                  <p className="text-slate-500 text-sm mt-1">Todas las propuestas han sido evaluadas.</p>
+                </div>
+              )}
+
+              {/* MODAL: REVISAR PROPUESTA */}
+              {modalPropuesta && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                  <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300">
+                    
+                    {/* Header del Modal */}
+                    <div className="sticky top-0 bg-[#002B49] text-white p-6 flex items-center justify-between z-10">
+                      <div>
